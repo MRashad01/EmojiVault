@@ -1,0 +1,5 @@
+cryptography
+psutil==5.9.8
+qrcode==8.0
+emoji==2.14.1
+opencv-python==4.8.1
