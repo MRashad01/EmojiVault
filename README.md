@@ -1,68 +1,38 @@
-# EmojiVault
-# Emoji-Secure Password Manager
+# EmojiVault🔐
 
-A desktop password manager that combines a virtual emoji keyboard, hardware-based key derivation, AES-GCM encryption, and QR-code key recovery—built with Python and Tkinter. Store and retrieve your credentials securely without ever typing your master password on a physical keyboard.
 
----
-
-## Features
-
-- **Virtual Emoji Keyboard**  
-  Enter your master password via on-screen emojis to defeat keyloggers and physical-keyboard attacks.
-
-- **Hardware-Tied Key Derivation**  
-  Combines your machine’s MAC address, RAM size, CPU info, and emoji inputs to generate a unique AES-128 key.
-
-- **AES-128-GCM Encryption**  
-  Ensures both confidentiality and integrity of stored credentials.
-
-- **QR-Code Recovery**  
-  If your hardware changes, recover your encryption key by scanning a previously generated QR code.
-
-- **Secure Local Storage**  
-  Uses a lightweight SQLite database (no server required) to store user accounts and encrypted passwords.
+This project is a user-friendly password manager designed to generate and manage secure passwords using emojis, letters, and numbers. It includes advanced security features like AES encryption, hardware-based key generation, QR-code backup, and a fully interactive GUI.
 
 ---
 
-## Architecture Overview
+## 🧩 Features
 
-1. **Presentation Layer**  
-   - Tkinter GUI: Login/Register forms, main dashboard, emoji keyboard, dialogs.  
-   - Disables physical keyboard input during password entry.
-
-2. **Business Logic Layer**  
-   - **Emoji Matrix Algorithm**: Transforms emoji selections into a 5×5 bit matrix.  
-   - **Key Derivation Service**: Gathers hardware-specific data + emoji matrix → 16-byte AES key.  
-   - **Encryption Service**: AES-128-GCM with PKCS#7 padding and Base64 encoding.  
-   - **Hardware Change Detector**: Flags changes and triggers QR-code recovery.  
-   - **QR Code Service**: Generates and reads encrypted key QR codes via `pyqrcode` & OpenCV.
-
-3. **Data Layer**  
-   - SQLite database with two tables:  
-     - `users` (usernames + SHA-256 password hashes)  
-     - `passwords` (site, account name, AES-encrypted password; linked to `users`)
+- ✅ AES-GCM encryption for strong data protection
+- 🔐 Hardware-specific AES key generation (based on MAC address, RAM, Disk, etc.)
+- 🌈 Emoji + letters + numbers password generator
+- 📷 QR code backup and recovery
+- 📁 `.txt`-based site identification system
+- 💻 GUI interface (built with Tkinter)
+- 🧠 Physical keyboard is blocked for secure input via virtual keyboard
+- 📦 SQLite database for user and password storage
 
 ---
 
-## Requirements
+## 📁 File Structure
 
-- Python 3.8+  
-- `tkinter`  
-- `pycryptodome`  
-- `pyqrcode` (or `qrcode`)  
-- `opencv-python`  
-- `psutil`  
-- `sqlite3` (built-in)  
+- `main.py`: Main application file. Manages GUI, encryption, database operations, QR code logic, and user interactions.
+- `Algorithm.py`: Handles emoji-based password generation, including binary logic, XOR operations, S-box substitutions, etc.
+- `supported_emojis_with_symbols.csv`: Maps emojis to their symbolic/ASCII equivalents.
+- `site/`: Contains `.txt` files representing registered sites.
+- `users2.db`: SQLite database file storing encrypted user credentials.
 
 ---
 
-## Installation
+## 🚀 Installation
 
 ```bash
-git clone https://github.com/MRashad01/EmojiVault/tree/main/EmojiVault.git
-cd emoji-secure-password-manager
-
-python3 -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-
+git clone https://github.com/your-username/emoji-password-manager.git
+cd emoji-password-manager
 pip install -r requirements.txt
+
+
