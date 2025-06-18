@@ -59,7 +59,7 @@ A desktop password manager that combines a virtual emoji keyboard, hardware-base
 ## Installation
 
 ```bash
-git clone https://github.com/your-username/emoji-secure-password-manager.git
+git clone https://github.com/MRashad01/EmojiVault/tree/main/EmojiVault.git
 cd emoji-secure-password-manager
 
 python3 -m venv venv
