@@ -31,7 +31,7 @@ This project is a user-friendly password manager designed to generate and manage
 ## 🚀 Installation
 
 ```bash
-git clone https://github.com/your-username/emoji-password-manager.git
+git clone https://github.com/MRashad01/EmojiVault.git
 cd emoji-password-manager
 pip install -r requirements.txt
 
