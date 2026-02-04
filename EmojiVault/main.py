@@ -1,4 +1,4 @@
-#AES 128 kullanildi ecb ile
+# AES-128 used.
 
 import importlib.util
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -19,11 +19,11 @@ import os
 
 
 
-# Veritabanı bağlantısı oluştur
+# Create a database connection.
 conn = sqlite3.connect("users2.db")
 cursor = conn.cursor()
 
-# Kullanıcılar tablosu oluştur
+# Create the users table.
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """)
 
-# Parolalar tablosu oluştur
+# Create the passwords table.
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS passwords (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,28 +45,28 @@ CREATE TABLE IF NOT EXISTS passwords (
 """)
 conn.commit()
 
-# Kullanıcı oturumu global değişken
+# Global user session variable.
 global logged_in_user_id
 logged_in_user_id = None
 
-# Fiziksel klavyeden giriş engelleme
+# Block physical keyboard input.
 def block_physical_keyboard(event):
     return "break"
 
 
 def xor_hex(a, b):
-    """İki stringin hexadecimal karşılıklarını XOR'lar."""
+    """XOR the hex representations of two strings."""
     result = hex(int(a, 16) ^ int(b, 16))[2:].zfill(2)
-    return result[0] + result[-1]  # İlk ve son karakter
+    return result[0] + result[-1]  # First and last characters.
 
 
 def get_largest_digit(value):
-    """Bir sayının içindeki en büyük rakamı döndürür."""
+    """Return the largest digit in a number."""
     return max(int(digit) for digit in str(value))
 
 
 def get_system_info():
-    # MAC adresini al ve parçala
+    # Get and split the MAC address.
     mac_address = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0, 8 * 6, 8)][::-1])
     mac_parts = mac_address.split(':')
     first_part = mac_parts[0]
@@ -75,7 +75,7 @@ def get_system_info():
 
 
 
-    # Sistem bilgilerini al ve ASCII değerlerine dönüştür
+    # Get system info and convert to ASCII hex values.
     system = platform.system()[:2].encode('ascii').hex()
     version = platform.version()[:2].encode('ascii').hex()
     machine = platform.machine()[:2].encode('ascii').hex()
@@ -98,44 +98,44 @@ def get_system_info():
 
     print(mac_address)
 
-    # XOR işlemleri, sadece ilk ve son karakterler
+    # XOR operations (first and last characters only).
     xor_results = {
-        "Sistem XOR MAC1": xor_hex(system, first_part),
-        "Sürüm XOR MAC2": xor_hex(version, mac_parts[1]),
-        "Makine XOR MAC3": xor_hex(machine, mac_parts[2]),
+        "System XOR MAC1": xor_hex(system, first_part),
+        "Version XOR MAC2": xor_hex(version, mac_parts[1]),
+        "Machine XOR MAC3": xor_hex(machine, mac_parts[2]),
         "Node XOR MAC4": xor_hex(node, mac_parts[3]),
-        "İşlemci XOR MAC5": xor_hex(processor, mac_parts[4])
+        "Processor XOR MAC5": xor_hex(processor, mac_parts[4]),
     }
     print(system, first_part)
 
-    # Depolama bilgileri
-    total_ram = int(psutil.virtual_memory().total / (1024 ** 3))  # GB cinsinden RAM
+    # Storage info.
+    total_ram = int(psutil.virtual_memory().total / (1024 ** 3))  # RAM in GB
     total_disk = 0
     for disk in psutil.disk_partitions():
         try:
             usage = psutil.disk_usage(disk.mountpoint)
             total_disk += usage.total
         except PermissionError:
-            pass  # Yetki hatası alırsak devam et
+            pass  # Skip if permission is denied.
         except FileNotFoundError:
-            pass  # Mount edilmiş ama artık erişilemeyen diskleri atla
+            pass  # Skip disks that are no longer accessible.
 
-    total_disk = int(total_disk / (1024 ** 3))  # GB cinsinden disk kapasitesi
+    total_disk = int(total_disk / (1024 ** 3))  # Disk capacity in GB
     largest_ram_digit = get_largest_digit(total_ram)
     largest_disk_digit = get_largest_digit(total_disk)
     print(largest_disk_digit)
 
-    # Verileri birleştir
+    # Combine data.
     aes_key = (
-        f"{first_part}"  # MAC adresinin ilk parçası
-        f"{xor_results['Sistem XOR MAC1']}"  # Sistem XOR MAC1 (ilk ve son karakter)
-        f"{largest_ram_digit}"  # RAM içindeki en büyük rakam
-        f"{xor_results['Sürüm XOR MAC2']}"  # Sürüm XOR MAC2 (ilk ve son karakter)
-        f"{xor_results['Makine XOR MAC3']}"  # Makine XOR MAC3 (ilk ve son karakter)
-        f"{last_part}"  # MAC adresinin son parçası
-        f"{xor_results['Node XOR MAC4']}"  # Node XOR MAC4 (ilk ve son karakter)
-        f"{largest_disk_digit}"  # Disk içindeki en büyük rakam
-        f"{xor_results['İşlemci XOR MAC5']}"  # İşlemci XOR MAC5 (ilk ve son karakter)
+        f"{first_part}"  # First part of the MAC address.
+        f"{xor_results['System XOR MAC1']}"  # System XOR MAC1 (first/last chars).
+        f"{largest_ram_digit}"  # Largest RAM digit.
+        f"{xor_results['Version XOR MAC2']}"  # Version XOR MAC2 (first/last chars).
+        f"{xor_results['Machine XOR MAC3']}"  # Machine XOR MAC3 (first/last chars).
+        f"{last_part}"  # Last part of the MAC address.
+        f"{xor_results['Node XOR MAC4']}"  # Node XOR MAC4 (first/last chars).
+        f"{largest_disk_digit}"  # Largest disk digit.
+        f"{xor_results['Processor XOR MAC5']}"  # Processor XOR MAC5 (first/last chars).
     )
 
 
@@ -144,12 +144,12 @@ def get_system_info():
 
 aes_key = get_system_info()
 print("AES Key:", aes_key)
-aes_key_bytes = aes_key.encode('utf-8')  # UTF-8 kullanarak bayt dizisine çeviriyoruz
+aes_key_bytes = aes_key.encode('utf-8')  # Convert to bytes using UTF-8.
 print("AES Key (Bytes):", aes_key_bytes)
 
 
-# AES Anahtarı (16, 24 veya 32 bayt uzunluğunda olmalıdır)
-AES_KEY = aes_key_bytes  # 16 byte sabit bir anahtar örneği
+# AES key (must be 16, 24, or 32 bytes).
+AES_KEY = aes_key_bytes
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
@@ -170,31 +170,31 @@ def decrypt_data(encrypted_text):
     return decrypted.decode()
 
 
-# SHA-256 ile hashleme fonksiyonu
+# SHA-256 hashing function.
 def hash_text(text):
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-# Sanal klavyeden emoji ekleme
+# Add emoji from the virtual keyboard.
 def add_emoji_to_password(entry, emoji):
     entry.insert(tk.END, emoji)
 
-# Şifreyi temizleme
+# Clear the password.
 def clear_password(entry):
     entry.delete(0, tk.END)
 
-# Sanal klavyeyi açma fonksiyonu
+# Open the virtual keyboard.
 virtual_keyboard_open = False
 
 def open_virtual_keyboard(entry):
     global virtual_keyboard_open
 
 
-    if virtual_keyboard_open:  # Eğer sanal klavye zaten açıksa
-        return  # Yeni pencere açılmasın
+    if virtual_keyboard_open:  # If the virtual keyboard is already open.
+        return  # Do not open another window.
 
     keyboard_window = tk.Toplevel()
-    keyboard_window.title("Sanal Klavye")
+    keyboard_window.title("Virtual Keyboard")
     keyboard_window.geometry("350x450+700+250")
     keyboard_window.configure(bg="#f0f4f7")
 
@@ -207,7 +207,12 @@ def open_virtual_keyboard(entry):
     keyboard_window.protocol("WM_DELETE_WINDOW", on_close)
     virtual_keyboard_open = True
 
-    tk.Label(keyboard_window, text="Şifrenizi Giriniz!", font=("Helvetica", 14, "bold"), bg="#f0f4f7").pack(pady=10)
+    tk.Label(
+        keyboard_window,
+        text="Enter your password!",
+        font=("Helvetica", 14, "bold"),
+        bg="#f0f4f7",
+    ).pack(pady=10)
 
     emoji_list = [
         "😀", "😁", "😂", "🤣",
@@ -231,20 +236,20 @@ def open_virtual_keyboard(entry):
             btn_emoji.grid(row=i, column=j, padx=3, pady=3)
 
     tk.Button(
-        keyboard_window, text="Temizle", font=("Helvetica", 12, "bold"),
+        keyboard_window, text="Clear", font=("Helvetica", 12, "bold"),
         command=lambda: clear_password(entry), bg="#ff6961", fg="white"
     ).pack(side="left", padx=20, pady=7)
     tk.Button(
-        keyboard_window, text="Tamam", font=("Helvetica", 12, "bold"),
+        keyboard_window, text="OK", font=("Helvetica", 12, "bold"),
         command=lambda: on_close(), bg="#ff6961", fg="white"
     ).pack(side="right", padx=20, pady=7)
 
-# Kullanıcı oturumunu kontrol etme
+# Check the logged-in user session.
 def get_logged_in_user_id():
     global logged_in_user_id
     return logged_in_user_id
 
-# Kullanıcının kayıtlı parolalarını listeleme
+# List the user's saved passwords.
 def load_user_passwords():
     user_id = get_logged_in_user_id()
     if not user_id:
@@ -267,38 +272,38 @@ def load_user_passwords():
 
 def add_password():
     import time
-    start_time = time.time()  # ⏱️ Başlangıç zamanı
+    start_time = time.time()  # ⏱️ Start time
 
     site_name = entry_site_name.get().lower()
     site_username = entry_site_username.get()
 
-    # "site" klasörünü oluştur (eğer yoksa)
+    # Create the "site" folder (if missing).
     folder_name = "site"
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
 
-    # Dosya oluşturma işlemi (butona tıklandığı anda)
+    # Create a file immediately when the button is clicked.
     try:
         file_path = os.path.join(folder_name, f"{site_name}.txt")
         with open(file_path, "w") as file:
-            file.write("Bilgiler aşağıya eklenecek...\n")
-        messagebox.showinfo("Başarılı", f"'{file_path}' dosyası oluşturuldu!")
+            file.write("Information will be added below...\n")
+        messagebox.showinfo("Success", f"'{file_path}' was created!")
     except Exception as e:
-        messagebox.showerror("Hata", f"Dosya oluşturulurken bir hata oluştu: {e}")
+        messagebox.showerror("Error", f"An error occurred while creating the file: {e}")
 
-    # Kullanıcı bilgilerini ve şifreyi al
+    # Get user details and password.
     site_username = entry_site_username.get()
 
     if not site_name or not site_username:
-        messagebox.showerror("Hata", "Tüm alanları doldurun!")
+        messagebox.showerror("Error", "Please fill out all fields!")
         return
 
     user_id = get_logged_in_user_id()
     if not user_id:
-        messagebox.showerror("Hata", "Kullanıcı oturumu bulunamadı!")
+        messagebox.showerror("Error", "No user session found!")
         return
 
-    # onemli_kod.py dosyasından şifreyi al
+    # Load the password from Algorithm.py.
     spec = importlib.util.spec_from_file_location("onemli_kod", "Algorithm.py")
     onemli_kod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(onemli_kod)
@@ -308,17 +313,17 @@ def add_password():
     generated_password = ''.join(onemli_kod.emoji_lists)
     encrypted_password = encrypt_data(generated_password)
 
-    # Veritabanına kaydet
+    # Save to the database.
     cursor.execute("INSERT INTO passwords (user_id, site_name, site_username, password) VALUES (?, ?, ?, ?)",
                    (user_id, encrypted_site_name, encrypted_site_username, encrypted_password))
     conn.commit()
 
 
-    # Şifreleri yükle
+    # Reload passwords.
     load_user_passwords()
-    end_time = time.time()  # ⏱️ Bitiş zamanı
+    end_time = time.time()  # ⏱️ End time
     total_time = end_time - start_time
-    print(f"Şifre üretimi, şifreleme ve kayıt işlemi toplam {total_time:.4f} saniye sürdü.")
+    print(f"Password generation, encryption, and save took {total_time:.4f} seconds in total.")
 
 
 def login():
@@ -326,7 +331,7 @@ def login():
     password = entry_login_password.get()
 
     if not username or not password:
-        messagebox.showerror("Hata", "Tüm alanları doldurun!")
+        messagebox.showerror("Error", "Please fill out all fields!")
         return
 
     hashed_username = hash_text(username)
@@ -337,20 +342,20 @@ def login():
     if user:
         global logged_in_user_id
         logged_in_user_id = user[0]
-        messagebox.showinfo("Başarılı", f"Hoş geldiniz!")
+        messagebox.showinfo("Success", "Welcome!")
         login_frame.pack_forget()
         main_frame.pack()
         load_user_passwords()
     else:
-        messagebox.showerror("Hata", "Kullanıcı adı veya şifre yanlış!")
+        messagebox.showerror("Error", "Invalid username or password!")
 
-# Kullanıcı kaydı işlemi
+# User registration.
 def register():
     username = entry_reg_username.get()
     password = entry_reg_password.get()
 
     if not username or not password:
-        messagebox.showerror("Hata", "Tüm alanları doldurun!")
+        messagebox.showerror("Error", "Please fill out all fields!")
         return
 
     try:
@@ -360,19 +365,19 @@ def register():
         cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (hashed_username, hashed_password))
         conn.commit()
 
-        messagebox.showinfo("Başarılı", "Kayıt başarılı! Giriş yapabilirsiniz.")
+        messagebox.showinfo("Success", "Registration successful! You can now log in.")
         show_login_screen()
     except sqlite3.IntegrityError:
-        messagebox.showerror("Hata", "Bu kullanıcı adı zaten alınmış!")
+        messagebox.showerror("Error", "This username is already taken!")
 
 
-# Giriş ekranını göster
+# Show the login screen.
 def show_login_screen():
     register_frame.pack_forget()
     main_frame.pack_forget()
     login_frame.pack()
 
-# Kayıt ekranını göster
+# Show the registration screen.
 def show_register_screen():
     login_frame.pack_forget()
     register_frame.pack()
@@ -381,7 +386,7 @@ def show_register_screen():
     #####################
 
 
-    # anakart numara aliyo
+    # Fetch motherboard serial number.
 
     def get_motherboard_serial():
         try:
@@ -391,61 +396,61 @@ def show_register_screen():
             serial_number = result.stdout.strip()
             return serial_number
         except Exception as e:
-            return f"Hata: {e}"
+            return f"Error: {e}"
 
     serinumber = get_motherboard_serial()
-    print("Anakart Seri Numarası:", serinumber)
+    print("Motherboard Serial Number:", serinumber)
     metin = serinumber
-    # Verilen metin ve anahtar
+    # Plain text and key.
     plain_text = aes_key
     key = serinumber
 
-    # Şifreli metin için boş bir liste oluştur
+    # Create an empty list for cipher text.
     cipher_text = []
 
-    # Anahtar uzunluğunu al
+    # Get key length.
     key_length = len(key)
     key_index = 0
 
     for char in plain_text:
-        if char.isalpha():  # Eğer karakter harfse
-            shift = ord(key[key_index].upper()) - ord('A')  # Anahtar harfinin kaydırma değeri
+        if char.isalpha():  # If the character is a letter.
+            shift = ord(key[key_index].upper()) - ord('A')  # Key shift value.
             if char.isupper():
                 cipher_text.append(chr((ord(char) - ord('A') + shift) % 26 + ord('A')))
             else:
                 cipher_text.append(chr((ord(char) - ord('a') + shift) % 26 + ord('a')))
-            key_index = (key_index + 1) % key_length  # Anahtarın sıradaki harfini seç
-        elif char.isdigit():  # Eğer karakter rakamsa
-            shift = ord(key[key_index].upper()) - ord('A')  # Anahtar harfinin kaydırma değeri
-            cipher_text.append(str((int(char) + shift) % 10))  # Rakamları 0-9 arasında döndür
+            key_index = (key_index + 1) % key_length  # Advance to the next key character.
+        elif char.isdigit():  # If the character is a digit.
+            shift = ord(key[key_index].upper()) - ord('A')  # Key shift value.
+            cipher_text.append(str((int(char) + shift) % 10))  # Rotate digits within 0-9.
             key_index = (key_index + 1) % key_length
         else:
-            cipher_text.append(char)  # Eğer harf veya rakam değilse (boşluk, noktalama işareti vs.), olduğu gibi ekle
+            cipher_text.append(char)  # Keep non-alphanumeric characters unchanged.
 
-    # Şifreli metni yazdır
-    print(f"Şifreli metin: {''.join(cipher_text)}")
+    # Print cipher text.
+    print(f"Cipher text: {''.join(cipher_text)}")
 
     chipher__text = ''.join(cipher_text)
     print(chipher__text)
 
-    # QR kod nesnesini oluşturun ve yapılandırın
+    # Create and configure the QR code.
     qr = qrcode.QRCode(
-        version=1,  # QR kodun versiyonu (1 en küçük boyuttur)
-        error_correction=qrcode.constants.ERROR_CORRECT_L,  # Hata düzeltme seviyesi
-        box_size=10,  # Her bir kutucuk boyutu
-        border=4,  # Kenar boşluğu
+        version=1,  # QR code version (1 is the smallest size).
+        error_correction=qrcode.constants.ERROR_CORRECT_L,  # Error correction level.
+        box_size=10,  # Box size.
+        border=4,  # Border size.
     )
 
-    # Metni QR koda ekleyin
+    # Add text to the QR code.
     qr.add_data(chipher__text)
     qr.make(fit=True)
 
-    # QR kodu bir resim olarak oluşturun
+    # Render the QR code as an image.
     img = qr.make_image(fill_color="black", back_color="white")
 
-    # Oluşturulan QR kodu kaydedin
+    # Save the QR code.
     img.save("qrcode.png")
-    print("QR kod başarıyla 'qrcode.png' olarak kaydedildi.")
+    print("QR code saved as 'qrcode.png'.")
 
 
 
@@ -453,43 +458,52 @@ def show_register_screen():
 def onay():
 
     def onay_ver():
-        """Kullanıcı 'Evet' seçerse işlemi devam ettirir"""
-        messagebox.showinfo("Devam", "İşlem devam ediyor...")
+        """Continue the process when the user selects 'Yes'."""
+        messagebox.showinfo("Continue", "The process is continuing...")
         root.destroy()  # Pencereyi kapat
 
     def iptal_et():
-        """Kullanıcı 'Hayır' seçerse programı sonlandırır"""
-        messagebox.showwarning("Durduruldu", "İşlem sonlandırıldı.")
+        """Stop the program when the user selects 'No'."""
+        messagebox.showwarning("Stopped", "The process was cancelled.")
         root.destroy()  # Pencereyi kapat
-        root.quit()  # Programı tamamen kapat
+        root.quit()  # Close the program completely.
 
-    # Ana pencere oluştur
+    # Create the main window.
     root = tk.Tk()
-    root.title("Onay Ekranı")
+    root.title("Confirmation")
     root.geometry("600x250+200+730")
 
-    # Etiket oluştur
-    label = tk.Label(root, text="""  Eğer donanım değiştirildiyse 
-                "Evet" seçerek KARE-KODU"U seçin !
-                 bu işlem Üretilmiş şifreleri 
-                 Parolalar.txt dosyasına kaydedecek ve
-                 veri tabanını tamamen temizleyecektir.
-                 ama donanım değişmediyseniz HAYIR seçiniz.""", font=("Arial", 12))
+    # Create the label.
+    label = tk.Label(
+        root,
+        text="""  If hardware has changed,
+choose "Yes" to select the QR code.
+This will save generated passwords to decrypted_passwords.txt
+and completely clear the database.
+If your hardware has not changed, choose "No".""",
+        font=("Arial", 12),
+    )
     label.pack(pady=10)
 
-    # Butonlar oluştur
-    button_yes = tk.Button(root, text="Evet", command=lambda: (onay_ver() , app()), width=10, bg="lightgreen")
+    # Create buttons.
+    button_yes = tk.Button(
+        root,
+        text="Yes",
+        command=lambda: (onay_ver(), app()),
+        width=10,
+        bg="lightgreen",
+    )
     button_yes.pack(side=tk.LEFT, padx=20, pady=20)
 
-    button_no = tk.Button(root, text="Hayır", command=iptal_et, width=10, bg="lightcoral")
+    button_no = tk.Button(root, text="No", command=iptal_et, width=10, bg="lightcoral")
     button_no.pack(side=tk.RIGHT, padx=20, pady=20)
 
-    # Pencereyi çalıştır
+    # Run the window.
     root.mainloop()
 
 
 def app():
-    # Veritabanı bağlantısı
+    # Database connection.
     conn = sqlite3.connect("users2.db")
     cursor = conn.cursor()
 
@@ -510,8 +524,8 @@ def app():
 
             return unpadded_data.decode()
         except Exception as e:
-            print(f"Şifre çözme hatası: {e}")
-            return "[Çözülemedi]"
+            print(f"Decryption error: {e}")
+            return "[Failed to decrypt]"
 
 
     def decode_qr(file_path):
@@ -521,7 +535,8 @@ def app():
         return data if data else None
 
     def decrypt_and_save():
-        file_path = filedialog.askopenfilename(title="QR Kod Seç",
+        file_path = filedialog.askopenfilename(
+            title="Select QR Code",
                                                filetypes=[("PNG Files", "*.png"), ("All Files", "*.*")])
         if not file_path:
             return
@@ -533,46 +548,46 @@ def app():
                                 capture_output=True, text=True)
         serial_number = result.stdout.strip()
 
-        # Şifreli metin ve anahtar
+        # Cipher text and key.
         cipher_text = qr_content
         key = serial_number
         print(serial_number)
 
-        # Düz metni (deşifrelenmiş) için boş bir liste oluştur
+        # Create an empty list for plain text.
         plain_text = []
 
-        # Anahtar uzunluğunu al
+        # Get key length.
         key_length = len(key)
         key_index = 0
 
-        # Şifreli metni çöz
+        # Decrypt the cipher text.
         for char in cipher_text:
-            if char.isalpha():  # Eğer karakter harfse
-                shift = ord(key[key_index].upper()) - ord('A')  # Anahtar harfinin kaydırma değeri
+            if char.isalpha():  # If the character is a letter.
+                shift = ord(key[key_index].upper()) - ord('A')  # Key shift value.
                 if char.isupper():
                     plain_text.append(chr((ord(char) - ord('A') - shift) % 26 + ord('A')))
                 else:
                     plain_text.append(chr((ord(char) - ord('a') - shift) % 26 + ord('a')))
-                key_index = (key_index + 1) % key_length  # Anahtarın sıradaki harfini seç
-            elif char.isdigit():  # Eğer karakter rakamsa
-                shift = ord(key[key_index].upper()) - ord('A')  # Anahtar harfinin kaydırma değeri
-                plain_text.append(str((int(char) - shift) % 10))  # Rakamları 0-9 arasında döndür
+                key_index = (key_index + 1) % key_length  # Advance to the next key character.
+            elif char.isdigit():  # If the character is a digit.
+                shift = ord(key[key_index].upper()) - ord('A')  # Key shift value.
+                plain_text.append(str((int(char) - shift) % 10))  # Rotate digits within 0-9.
                 key_index = (key_index + 1) % key_length
             else:
-                plain_text.append(char)  # Eğer harf veya rakam değilse (boşluk, noktalama işareti vs.), olduğu gibi ekle
+                plain_text.append(char)  # Keep non-alphanumeric characters unchanged.
 
         qr_content = ''.join(plain_text)
         qr_content = qr_content.encode('utf-8')
         print(qr_content)
 
-        # Deşifrelenmiş metni yazdır
+        # Show decrypted text.
         if not qr_content:
-            messagebox.showerror("Hata", "QR kod okunamadı!")
+            messagebox.showerror("Error", "Could not read the QR code!")
             return
 
         decryption_key = qr_content
         if len(decryption_key) not in [16, 24, 32]:
-            messagebox.showerror("Hata", "QR koddan alınan anahtar geçersiz uzunlukta!")
+            messagebox.showerror("Error", "The key extracted from the QR code has an invalid length!")
             return
 
         load_user_passwords(decryption_key)
@@ -587,34 +602,41 @@ def app():
             site_name = decrypt_data(enc_site, decryption_key)
             site_username = decrypt_data(enc_user, decryption_key)
             password = decrypt_data(enc_pass, decryption_key)
-            decrypted_data.append(f"Site: {site_name}\nKullanıcı Adı: {site_username}\nŞifre: {password}\n---\n")
+            decrypted_data.append(
+                f"Site: {site_name}\nUsername: {site_username}\nPassword: {password}\n---\n"
+            )
 
-        save_path = "cozulmus_sifreler.txt"
+        save_path = "decrypted_passwords.txt"
         with open(save_path, "w", encoding='utf-8') as file:
             file.writelines(decrypted_data)
 
-        messagebox.showinfo("Başarılı", f"Şifreler '{save_path}' dosyasına kaydedildi!")
+        messagebox.showinfo("Success", f"Passwords saved to '{save_path}'!")
 
     def close_db():
         conn.close()
 
     def delete_db():
         try:
-            # Tüm veritabanı verilerini sil
-            cursor.execute("DELETE FROM passwords")  # Veritabanındaki şifreleri temizle
-            conn.commit()  # Değişiklikleri kaydet
-            messagebox.showinfo("Başarılı", "Veritabanı verileri başarıyla silindi!")
+            # Delete all database data.
+            cursor.execute("DELETE FROM passwords")  # Clear passwords in the database.
+            conn.commit()  # Save changes.
+            messagebox.showinfo("Success", "Database data deleted successfully!")
         except Exception as e:
-            messagebox.showerror("Hata", f"Veritabanı verileri silinemedi: {e}")
+            messagebox.showerror("Error", f"Failed to delete database data: {e}")
 
-    # Tkinter Arayüzü
+    # Tkinter UI.
     window2 = tk.Tk()
-    window2.title("QR Kod ile Şifre Çözme")
+    window2.title("Decrypt Passwords with QR Code")
     window2.geometry("350x120+700+100")
-    window2.protocol("WM_DELETE_WINDOW",
-                    lambda: [window2.destroy()])  # Pencere kapandığında DB'yi kapat
+    window2.protocol(
+        "WM_DELETE_WINDOW", lambda: [window2.destroy()]
+    )  # Close the window.
 
-    btn_decrypt = tk.Button(window2, text="QR Kod ile Şifreleri Çöz", command=lambda : (decrypt_and_save() , delete_db(), close_db(), window2.destroy()), font=("Helvetica", 12),
+    btn_decrypt = tk.Button(
+        window2,
+        text="Decrypt Passwords with QR Code",
+        command=lambda: (decrypt_and_save(), delete_db(), close_db(), window2.destroy()),
+        font=("Helvetica", 12),
                             bg="#4CAF50", fg="white")
     btn_decrypt.pack(pady=20)
 
@@ -626,14 +648,14 @@ def app():
 
 def copy_to_clipboard(event):
     try:
-        # Tıklanan öğeyi al
+        # Get the clicked item.
         selected_item_index = list_passwords.curselection()
-        if not selected_item_index:  # Eğer seçim yoksa
+        if not selected_item_index:  # No selection.
             return
 
-        selected_item = list_passwords.get(selected_item_index[0])  # Seçilen öğeyi al
+        selected_item = list_passwords.get(selected_item_index[0])  # Get the selected item.
 
-        # "Site:", "Kullanıcı Adı:", ve "Şifre:" kısımlarını çıkar
+        # Extract fields from the listbox item.
         if selected_item.startswith("Site:"):
             item_to_copy = selected_item.replace("Site:", "").strip()
         elif selected_item.startswith("Username:"):
@@ -641,28 +663,25 @@ def copy_to_clipboard(event):
         elif selected_item.startswith("Password:"):
             item_to_copy = selected_item.replace("Password:", "").strip()
         else:
-            return  # Kopyalanacak bir şey yoksa fonksiyondan çık
+            return  # Nothing to copy.
 
-        # Panoya kopyala
+        # Copy to clipboard.
         window.clipboard_clear()
         window.clipboard_append(item_to_copy)
         window.update()
 
-        # Kullanıcıya bilgi mesajı göster
-        messagebox.showinfo("Kopyalandı", f"{item_to_copy} panoya kopyalandı!")
+        # Show a message to the user.
+        messagebox.showinfo("Copied", f"{item_to_copy} was copied to the clipboard!")
     except Exception as e:
-        messagebox.showerror("Hata", f"Kopyalama sırasında bir hata oluştu: {e}")
+        messagebox.showerror("Error", f"An error occurred while copying: {e}")
 
-    # Listbox öğesine çift tıklama olayını bağla
-    list_passwords.bind("<Double-Button-1>", copy_to_clipboard)
-
-# Tkinter ana pencere
+# Main Tkinter window.
 window = tk.Tk()
 window.title("Password Manager")
 window.geometry("500x600+200+100")
 window.configure(bg="#f5f5f5")
 
-# Giriş ekranı
+# Login screen.
 login_frame = tk.Frame(window, bg="#f5f5f5")
 login_frame.pack()
 
@@ -683,19 +702,32 @@ btn_login.pack(pady=10)
 btn_to_register = tk.Button(login_frame, text="Register", command=show_register_screen, bg="#2196F3", fg="white", font=("Helvetica", 12), width=20)
 btn_to_register.pack()
 
-btn_to_click = tk.Button(login_frame, text="DONANIM DEĞİSİKLİĞİ", command= onay , bg="#2196F3", fg="white", font=("Helvetica", 12), width=20)
+btn_to_click = tk.Button(
+    login_frame,
+    text="HARDWARE CHANGE",
+    command=onay,
+    bg="#2196F3",
+    fg="white",
+    font=("Helvetica", 12),
+    width=20,
+)
 btn_to_click.pack(pady=120)
 
-label_text = tk.Label(login_frame, text="""Bilgisyarınızda donanım değişikliği yaparsanız
-güvenlik amacıyla hata alıcaksınız bu durumda 
-DONANIM DEĞİSİKLİĞİ butonunu seciniz
-Bu seçimi yapıp onayladıktan sonra
-Veritabanı tamamen silinip .txt ye yazılacak""", font=("Helvetica", 12), fg="black")
+label_text = tk.Label(
+    login_frame,
+    text="""If you change hardware on your computer,
+you will see an error for security reasons.
+In that case, choose the HARDWARE CHANGE button.
+After confirming, the database will be deleted
+and written to a .txt file.""",
+    font=("Helvetica", 12),
+    fg="black",
+)
 label_text.pack(pady=10)
 
 
 
-# Kayıt ekranı
+# Registration screen.
 register_frame = tk.Frame(window, bg="#f5f5f5")
 
 tk.Label(register_frame, text="Username:", bg="#f5f5f5", font=("Helvetica", 12)).pack(pady=5)
@@ -715,7 +747,7 @@ btn_register.pack(pady=10)
 btn_to_login = tk.Button(register_frame, text="Login", command=show_login_screen, bg="#2196FD", fg="white", font=("Helvetica", 12), width=20)
 btn_to_login.pack()
 
-# Ana ekran
+# Main screen.
 main_frame = tk.Frame(window, bg="#f5f5f5")
 
 tk.Label(main_frame, text="Site:", bg="#f5f5f5", font=("Helvetica", 12)).pack(pady=5)
